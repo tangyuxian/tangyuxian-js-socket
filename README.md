@@ -68,7 +68,7 @@ ws.removeSocket()
 ```
 
 ``` javascript
-import { Socket } from 'tangyuxian-js-socket'
+import Socket from 'tangyuxian-js-socket'
 let url = "ws://192.168.1.101:8888/websocket"
 let ws = new Socket(url)
 ws.websocketOnOpen(res=>{
