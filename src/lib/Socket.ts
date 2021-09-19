@@ -54,7 +54,7 @@ class Socket {
       throw new Error("请配置连接地址");
     }
     this.websocket = null;
-    this.websocket = new WebSocket(this.socketUrl);
+    this.websocket = new window.WebSocket(this.socketUrl);
     this.websocketOnOpen(null);
     this.websocketOnMessage(null);
     this.websocketOnError(null);
@@ -65,7 +65,7 @@ class Socket {
    * 连接成功
    */
   websocketOnOpen(callback: Function | null) {
-    if(!(this.websocket instanceof WebSocket)) return;
+    if(!(this.websocket instanceof window.WebSocket)) return;
     this.websocket.onopen = (event) => {
       if (this.option.debug) console.log("%c websocket链接成功", "color:green");
       this.sendPing(this.option.heartTime, this.option.heartMsg);
@@ -86,7 +86,7 @@ class Socket {
    * @param message
    */
   send(message: any) {
-    if(!(this.websocket instanceof WebSocket)) return;
+    if(!(this.websocket instanceof window.WebSocket)) return;
     if (this.websocket.readyState !== this.websocket.OPEN) {
       new Error("没有连接到服务器，无法发送消息");
       return;
@@ -99,7 +99,7 @@ class Socket {
    * @param callback
    */
   websocketOnMessage(callback: Function | null) {
-    if(!(this.websocket instanceof WebSocket)) return;
+    if(!(this.websocket instanceof window.WebSocket)) return;
     this.websocket.onmessage = (event) => {
       // 收到任何消息，重新开始倒计时心跳检测
       if (typeof callback === "function") {
@@ -115,7 +115,7 @@ class Socket {
    * @param callback
    */
   websocketOnError(callback: Function | null) {
-    if(!(this.websocket instanceof WebSocket)) return;
+    if(!(this.websocket instanceof window.WebSocket)) return;
     this.websocket.onerror = (event) => {
       if (this.option.debug) console.error("连接发生错误", event);
       if (typeof callback === "function") {
@@ -130,7 +130,7 @@ class Socket {
    * 连接关闭
    */
   websocketOnClose(callback: Function | null) {
-    if(!(this.websocket instanceof WebSocket)) return;
+    if(!(this.websocket instanceof window.WebSocket)) return;
     this.websocket.onclose = (event) => {
       if (this.option.debug) console.warn("socket连接关闭,关于原因:", event);
       clearInterval(this.sendPingInterval);
@@ -172,7 +172,7 @@ class Socket {
    */
   removeSocket() {
     this.activeLink = false;
-    if(!(this.websocket instanceof WebSocket)) return;
+    if(!(this.websocket instanceof window.WebSocket)) return;
     this.websocket.close(1000);
   }
 

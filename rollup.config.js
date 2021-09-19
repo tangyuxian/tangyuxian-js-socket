@@ -29,7 +29,7 @@ const config = [
   {
     input: path.resolve('./src/main.ts'),
     output: {
-      file: path.resolve('./dist/Socket.min.js'),
+      file: path.resolve('./dist/index.min.js'),
       format: 'umd',
       name: 'Socket'
     },
