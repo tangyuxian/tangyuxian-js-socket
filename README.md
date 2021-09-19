@@ -17,7 +17,7 @@ $ npm install/i tangyuxian-js-socket --save
 #### 通过CDN安装
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/tangyuxian-socket-js@2.0.0/dist/index.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tangyuxian-js-socket@2.0.0/dist/index.min.js"></script>
 ```
 
 ##  api
