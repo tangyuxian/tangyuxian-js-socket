@@ -1,11 +1,23 @@
 ## 简介
 
 > 对websocket进行一次简单的封装,加入心跳和重连机制,开箱即用
+>
+> 使用typescript对原有的1.0版本进行重写,并提供两种安装方式
 
 ##  安装
 
+提供两种安装方式
+
+#### 通过NPM安装
+
 ``` shell
 $ npm install/i tangyuxian-js-socket --save
+```
+
+#### 通过CDN安装
+
+```html
+<script src="https://cdn.jsdelivr.net/npm/tangyuxian-socket-js@2.0.0/dist/index.min.js"></script>
 ```
 
 ##  api
@@ -14,7 +26,7 @@ $ npm install/i tangyuxian-js-socket --save
 
 例如:ws://192.168.1.101:8888/websocket/
 
-> option对象中有一下属性
+> option对象中有以下属性
 
 | 参数              | 类型     | 默认值 | 说明                                                         |
 | ----------------- | -------- | ------ | ------------------------------------------------------------ |
