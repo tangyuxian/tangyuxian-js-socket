@@ -1,111 +1,58 @@
-function ownKeys(object, enumerableOnly) {
-  var keys = Object.keys(object);
-
-  if (Object.getOwnPropertySymbols) {
-    var symbols = Object.getOwnPropertySymbols(object);
-
-    if (enumerableOnly) {
-      symbols = symbols.filter(function (sym) {
-        return Object.getOwnPropertyDescriptor(object, sym).enumerable;
-      });
-    }
-
-    keys.push.apply(keys, symbols);
-  }
-
-  return keys;
-}
-
-function _objectSpread2(target) {
-  for (var i = 1; i < arguments.length; i++) {
-    var source = arguments[i] != null ? arguments[i] : {};
-
-    if (i % 2) {
-      ownKeys(Object(source), true).forEach(function (key) {
-        _defineProperty(target, key, source[key]);
-      });
-    } else if (Object.getOwnPropertyDescriptors) {
-      Object.defineProperties(target, Object.getOwnPropertyDescriptors(source));
-    } else {
-      ownKeys(Object(source)).forEach(function (key) {
-        Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key));
-      });
-    }
-  }
-
-  return target;
-}
-
-function _defineProperty(obj, key, value) {
-  if (key in obj) {
-    Object.defineProperty(obj, key, {
-      value: value,
-      enumerable: true,
-      configurable: true,
-      writable: true
-    });
-  } else {
-    obj[key] = value;
-  }
-
-  return obj;
-}
-
 class Socket {
-  constructor(socketUrl, option) {
-    _defineProperty(this, "socketUrl", void 0);
+  private socketUrl: string;
+  private option: {
+    heartTime: number;
+    errorCallback: Function | null;
+    openCallback: Function | null;
+    debug: boolean;
+    reconnectTime: number;
+    reconnectCount: number;
+    closeCallback: Function | null;
+    heartMsg: string;
+    onOpenAutoSendMsg: string;
+    isReconnect: boolean;
+    messageCallback: Function | null;
+  };
+  private websocket: WebSocket | null;
+  private sendPingInterval: any;
+  private reconnectInterval: any;
+  private activeLink: boolean;
+  private reconnectNum: number = 0;
 
-    _defineProperty(this, "option", void 0);
-
-    _defineProperty(this, "websocket", void 0);
-
-    _defineProperty(this, "sendPingInterval", void 0);
-
-    _defineProperty(this, "reconnectInterval", void 0);
-
-    _defineProperty(this, "activeLink", void 0);
-
-    _defineProperty(this, "reconnectNum", 0);
-
+  constructor(socketUrl: string, option: object) {
     this.socketUrl = socketUrl;
-    this.option = _objectSpread2({
+    this.option = {
       onOpenAutoSendMsg: "",
-      heartTime: 5000,
-      heartMsg: "ping",
-      isReconnect: true,
-      reconnectTime: 5000,
-      reconnectCount: -1,
-      openCallback: null,
-      closeCallback: null,
-      messageCallback: null,
-      errorCallback: null,
-      debug: false
-    }, option);
+      heartTime: 5000, // 心跳时间间隔
+      heartMsg: "ping", // 心跳信息,默认为'ping'
+      isReconnect: true, // 是否自动重连
+      reconnectTime: 5000, // 重连时间间隔
+      reconnectCount: -1, // 重连次数 -1 则不限制
+      openCallback: null, // 连接成功的回调
+      closeCallback: null, // 关闭的回调
+      messageCallback: null, // 消息的回调
+      errorCallback: null, // 错误的回调
+      debug: false,  //是否打开debug模式
+      ...option
+    };
     this.websocket = null;
-    this.sendPingInterval = null; //心跳定时器
-
-    this.reconnectInterval = null; //重连定时器
-
-    this.activeLink = true; //socket对象是否可用
-
+    this.sendPingInterval = null;  //心跳定时器
+    this.reconnectInterval = null;  //重连定时器
+    this.activeLink = true;  //socket对象是否可用
     this.reconnectNum = 0; //重连次数限制
-
     this.init();
   }
+
   /**
    * 初始化
    */
-
-
   init() {
     if (!("WebSocket" in window)) {
       throw new Error("当前浏览器不支持");
     }
-
     if (!this.socketUrl) {
       throw new Error("请配置连接地址");
     }
-
     this.websocket = null;
     this.websocket = new window.WebSocket(this.socketUrl);
     this.websocketOnOpen(null);
@@ -113,116 +60,100 @@ class Socket {
     this.websocketOnError(null);
     this.websocketOnClose(null);
   }
+
   /**
    * 连接成功
    */
-
-
-  websocketOnOpen(callback) {
-    if (!(this.websocket instanceof window.WebSocket)) return;
-
-    this.websocket.onopen = event => {
+  websocketOnOpen(callback: Function | null) {
+    if(!(this.websocket instanceof window.WebSocket)) return;
+    this.websocket.onopen = (event) => {
       if (this.option.debug) console.log("%c websocket链接成功", "color:green");
       this.sendPing(this.option.heartTime, this.option.heartMsg);
-
       if (this.option.onOpenAutoSendMsg) {
         this.send(this.option.onOpenAutoSendMsg);
       }
-
       if (typeof callback === "function") {
         callback(event);
       } else {
-        typeof this.option.openCallback === "function" && this.option.openCallback(event);
+        (typeof this.option.openCallback === "function") && this.option.openCallback(event);
       }
     };
+
   }
+
   /**
    * 发送数据
    * @param message
    */
-
-
-  send(message) {
-    if (!(this.websocket instanceof window.WebSocket)) return;
-
+  send(message: any) {
+    if(!(this.websocket instanceof window.WebSocket)) return;
     if (this.websocket.readyState !== this.websocket.OPEN) {
+      new Error("没有连接到服务器，无法发送消息");
       return;
     }
-
     this.websocket.send(message);
   }
+
   /**
    * 触发接收消息事件
    * @param callback
    */
-
-
-  websocketOnMessage(callback) {
-    if (!(this.websocket instanceof window.WebSocket)) return;
-
-    this.websocket.onmessage = event => {
+  websocketOnMessage(callback: Function | null) {
+    if(!(this.websocket instanceof window.WebSocket)) return;
+    this.websocket.onmessage = (event) => {
       // 收到任何消息，重新开始倒计时心跳检测
       if (typeof callback === "function") {
         callback(event.data);
       } else {
-        typeof this.option.messageCallback === "function" && this.option.messageCallback(event.data);
+        (typeof this.option.messageCallback === "function") && this.option.messageCallback(event.data);
       }
     };
   }
+
   /**
    * 连接错误
    * @param callback
    */
-
-
-  websocketOnError(callback) {
-    if (!(this.websocket instanceof window.WebSocket)) return;
-
-    this.websocket.onerror = event => {
+  websocketOnError(callback: Function | null) {
+    if(!(this.websocket instanceof window.WebSocket)) return;
+    this.websocket.onerror = (event) => {
       if (this.option.debug) console.error("连接发生错误", event);
-
       if (typeof callback === "function") {
         callback(event);
       } else {
-        typeof this.option.errorCallback === "function" && this.option.errorCallback(event);
+        (typeof this.option.errorCallback === "function") && this.option.errorCallback(event);
       }
     };
   }
+
   /**
    * 连接关闭
    */
-
-
-  websocketOnClose(callback) {
-    if (!(this.websocket instanceof window.WebSocket)) return;
-
-    this.websocket.onclose = event => {
+  websocketOnClose(callback: Function | null) {
+    if(!(this.websocket instanceof window.WebSocket)) return;
+    this.websocket.onclose = (event) => {
       if (this.option.debug) console.warn("socket连接关闭,关于原因:", event);
       clearInterval(this.sendPingInterval);
       clearInterval(this.reconnectInterval);
-
       if (this.activeLink && this.option.isReconnect) {
         this.onReconnect();
       } else {
         this.activeLink = false;
         if (this.option.debug) console.log("%c websocket链接完全关闭", "color:green");
       }
-
       if (typeof callback === "function") {
         callback(event);
       } else {
-        typeof this.option.closeCallback === "function" && this.option.closeCallback(event);
+        (typeof this.option.closeCallback === "function") && this.option.closeCallback(event);
       }
     };
   }
+
   /**
    * 连接事件
    */
-
-
   onReconnect() {
     if (this.option.debug) console.warn(`非正常关闭,${this.option.reconnectTime}毫秒后触发重连事件`);
-
     if (this.option.reconnectCount === -1 || this.option.reconnectCount > this.reconnectNum) {
       this.reconnectInterval = setTimeout(() => {
         this.reconnectNum++;
@@ -235,23 +166,22 @@ class Socket {
       clearInterval(this.reconnectInterval);
     }
   }
+
   /**
    * 移除socket并关闭
    */
-
-
   removeSocket() {
     this.activeLink = false;
-    if (!(this.websocket instanceof window.WebSocket)) return;
+    if(!(this.websocket instanceof window.WebSocket)) return;
     this.websocket.close(1000);
   }
+
+
   /**
    * 心跳机制
    * @param time
    * @param ping
    */
-
-
   sendPing(time = 5000, ping = "ping") {
     clearInterval(this.sendPingInterval);
     if (time === -1) return;
@@ -260,24 +190,21 @@ class Socket {
       this.send(ping);
     }, time);
   }
+
   /**
    * 返回websocket实例
    * @returns {null}
    */
-
-
   getWebsocket() {
     return this.websocket;
   }
+
   /**
    * 查看连接状态
    */
-
-
   getActiveLink() {
     return this.activeLink;
   }
-
 }
 
-export { Socket as default };
+export default Socket;
